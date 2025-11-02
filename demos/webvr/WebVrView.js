@@ -19,16 +19,11 @@ var eventEmitter = Marzipano.dependencies.eventEmitter;
 var mat4 = Marzipano.dependencies.glMatrix.mat4;
 var vec4 = Marzipano.dependencies.glMatrix.vec4;
 
-// A minimal View implementation for use with WebVR.
+// A minimal View implementation for use with WebXR.
 //
-// Note that RectilinearView cannot be used because the WebVR API exposes a view
+// Note that RectilinearView cannot be used because the WebXR API exposes a view
 // matrix instead of view parameters (yaw, pitch and roll).
-//
-// Most of the code has been copied verbatim from RectilinearView, but some
-// methods are missing (e.g. screenToCoordinates and coordinatesToScreen).
-// If we ever graduate this class to the core library, we'll need to figure out
-// the best way to share code between the two.
-function WebVrView() {
+function WebXrView() {
   this._width = 0;
   this._height = 0;
 
@@ -46,13 +41,13 @@ function WebVrView() {
   this._tmpVec = vec4.create();
 };
 
-eventEmitter(WebVrView);
+eventEmitter(WebXrView);
 
-WebVrView.prototype.destroy = function() {
+WebXrView.prototype.destroy = function() {
   clearOwnProperties(this);
 };
 
-WebVrView.prototype.size = function(size) {
+WebXrView.prototype.size = function(size) {
   size = size || {};
   size.width = this._width;
   size.height = this._height;
@@ -61,20 +56,20 @@ WebVrView.prototype.size = function(size) {
   return size;
 };
 
-WebVrView.prototype.setSize = function(size) {
+WebXrView.prototype.setSize = function(size) {
   this._width = size.width;
   this._height = size.height;
 };
 
-WebVrView.prototype.projection = function() {
+WebXrView.prototype.projection = function() {
   return this._proj;
 };
 
-WebVrView.prototype.inverseProjection = function() {
+WebXrView.prototype.inverseProjection = function() {
   return this._invProj;
 };
 
-WebVrView.prototype.setProjection = function(proj) {
+WebXrView.prototype.setProjection = function(proj) {
   var p = this._proj;
   var invp = this._invProj;
   var f = this._frustum;
@@ -93,13 +88,51 @@ WebVrView.prototype.setProjection = function(proj) {
   this.emit('change');
 };
 
-WebVrView.prototype.selectLevel = function(levelList) {
+
+/*
+    mat4.fromQuat(pose, frameData.pose.orientation);
+    mat4.invert(pose, pose);
+
+    mat4.copy(proj, frameData.leftProjectionMatrix);
+    mat4.multiply(proj, proj, pose);
+    viewLeft.setProjection(proj);
+
+    mat4.copy(proj, frameData.rightProjectionMatrix);
+    mat4.multiply(proj, proj, pose);
+    viewRight.setProjection(proj);
+*/
+
+// Set projection matrix from a WebXR XRView
+WebXrView.prototype.setFromXRView = function(xrView) {
+
+    var proj = mat4.create();
+    var pose = mat4.create();
+
+    mat4.copy(pose, xrView.transform.matrix);
+    // Clear out translation
+    pose[12] = 0;
+    pose[13] = 0;
+    pose[14] = 0;
+    mat4.invert(pose, pose);
+
+    mat4.copy(proj, xrView.projectionMatrix);
+    mat4.multiply(proj, proj, pose);
+
+    this.setProjection(proj);
+
+
+    // var proj = mat4.create();
+    // mat4.copy(proj, xrView.projectionMatrix);
+    // this.setProjection(proj);
+  };
+
+WebXrView.prototype.selectLevel = function(levelList) {
   // TODO: Figure out how to determine the most appropriate resolution.
   // For now, always default to the highest resolution level.
   return levelList[levelList.length-1];
 };
 
-WebVrView.prototype.intersects = function(rectangle) {
+WebXrView.prototype.intersects = function(rectangle) {
   // Check whether the rectangle is on the outer side of any of the frustum
   // planes. This is a sufficient condition, though not necessary, for the
   // rectangle to be completely outside the frustum.
@@ -123,4 +156,7 @@ WebVrView.prototype.intersects = function(rectangle) {
 };
 
 // Pretend to be a RectilinearView so that an appropriate renderer can be found.
-WebVrView.type = WebVrView.prototype.type = 'rectilinear';
+WebXrView.type = WebXrView.prototype.type = 'rectilinear';
+
+// Export for use elsewhere
+window.WebXrView = WebXrView;
