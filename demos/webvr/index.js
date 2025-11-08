@@ -53,7 +53,6 @@ async function main() {
   stage.addLayer(layerRight);
 
   // WebXR session and rendering logic
-  let xrSession = null;
   let xrRefSpace = null;
 
   let supported = await navigator.xr.isSessionSupported('immersive-vr');
@@ -72,7 +71,7 @@ async function main() {
   });
 
   function onSessionStarted(session) {
-    xrSession = session;    
+    let xrSession = session;    
     
     // Set up XRWebGLLayer with Marzipano's WebGL context
     const gl = stage.webGlContext();
@@ -100,21 +99,22 @@ async function main() {
 
     // For stereo, use the first two views (usually left/right)
     if (pose.views.length >= 2) {
-      viewLeft.setFromXRView(pose.views[0]);
-      viewRight.setFromXRView(pose.views[1]);
+      viewLeft.setProjectionFromXRView(pose.views[0]);
+      viewRight.setProjectionFromXRView(pose.views[1]);
 
       let layer = session.renderState.baseLayer;
       let viewportLeft = layer.getViewport(pose.views[0]);
       let viewportRight = layer.getViewport(pose.views[1]);
 
+      // Width of stage is the width for the left and right eyes
       stage.setSize({
         width: viewportLeft.width + viewportRight.width,
         height: viewportLeft.height
       });
 
     } else if (pose.views.length === 1) {
-      viewLeft.setFromXRView(pose.views[0]);
-      viewRight.setFromXRView(pose.views[0]);
+      viewLeft.setProjectionFromXRView(pose.views[0]);
+      viewRight.setProjectionFromXRView(pose.views[0]);
     }
 
     stage.render();

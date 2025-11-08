@@ -23,6 +23,11 @@ var vec4 = Marzipano.dependencies.glMatrix.vec4;
 //
 // Note that RectilinearView cannot be used because the WebXR API exposes a view
 // matrix instead of view parameters (yaw, pitch and roll).
+//
+// Most of the code has been copied verbatim from RectilinearView, but some
+// methods are missing (e.g. screenToCoordinates and coordinatesToScreen).
+// If we ever graduate this class to the core library, we'll need to figure out
+// the best way to share code between the two.
 function WebXrView() {
   this._width = 0;
   this._height = 0;
@@ -88,26 +93,11 @@ WebXrView.prototype.setProjection = function(proj) {
   this.emit('change');
 };
 
-
-/*
-    mat4.fromQuat(pose, frameData.pose.orientation);
-    mat4.invert(pose, pose);
-
-    mat4.copy(proj, frameData.leftProjectionMatrix);
-    mat4.multiply(proj, proj, pose);
-    viewLeft.setProjection(proj);
-
-    mat4.copy(proj, frameData.rightProjectionMatrix);
-    mat4.multiply(proj, proj, pose);
-    viewRight.setProjection(proj);
-*/
-
 // Set projection matrix from a WebXR XRView
-WebXrView.prototype.setFromXRView = function(xrView) {
+WebXrView.prototype.setProjectionFromXRView = function(xrView) {
 
-    var proj = mat4.create();
+
     var pose = mat4.create();
-
     mat4.copy(pose, xrView.transform.matrix);
     // Clear out translation
     pose[12] = 0;
@@ -115,15 +105,11 @@ WebXrView.prototype.setFromXRView = function(xrView) {
     pose[14] = 0;
     mat4.invert(pose, pose);
 
+    var proj = mat4.create();
     mat4.copy(proj, xrView.projectionMatrix);
     mat4.multiply(proj, proj, pose);
 
     this.setProjection(proj);
-
-
-    // var proj = mat4.create();
-    // mat4.copy(proj, xrView.projectionMatrix);
-    // this.setProjection(proj);
   };
 
 WebXrView.prototype.selectLevel = function(levelList) {
