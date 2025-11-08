@@ -95,22 +95,20 @@ WebXrView.prototype.setProjection = function(proj) {
 
 // Set projection matrix from a WebXR XRView
 WebXrView.prototype.setProjectionFromXRView = function(xrView) {
+  var pose = mat4.create();
+  mat4.copy(pose, xrView.transform.matrix);
+  // Clear out translation
+  pose[12] = 0;
+  pose[13] = 0;
+  pose[14] = 0;
+  mat4.invert(pose, pose);
 
+  var proj = mat4.create();
+  mat4.copy(proj, xrView.projectionMatrix);
+  mat4.multiply(proj, proj, pose);
 
-    var pose = mat4.create();
-    mat4.copy(pose, xrView.transform.matrix);
-    // Clear out translation
-    pose[12] = 0;
-    pose[13] = 0;
-    pose[14] = 0;
-    mat4.invert(pose, pose);
-
-    var proj = mat4.create();
-    mat4.copy(proj, xrView.projectionMatrix);
-    mat4.multiply(proj, proj, pose);
-
-    this.setProjection(proj);
-  };
+  this.setProjection(proj);
+};
 
 WebXrView.prototype.selectLevel = function(levelList) {
   // TODO: Figure out how to determine the most appropriate resolution.
@@ -143,6 +141,3 @@ WebXrView.prototype.intersects = function(rectangle) {
 
 // Pretend to be a RectilinearView so that an appropriate renderer can be found.
 WebXrView.type = WebXrView.prototype.type = 'rectilinear';
-
-// Export for use elsewhere
-window.WebXrView = WebXrView;

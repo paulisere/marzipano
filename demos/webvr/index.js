@@ -56,15 +56,10 @@ async function main() {
   let xrRefSpace = null;
 
   let supported = await navigator.xr.isSessionSupported('immersive-vr');
+  enterVrElement.style.display = supported ? 'block' : 'none';
+  noVrElement.style.display = supported ? 'none' : 'block';
 
-  if (supported) {
-    enterVrElement.style.display = 'block';
-    noVrElement.style.display = 'none';
-  } else {
-    enterVrElement.style.display = 'none';
-    noVrElement.style.display = 'block';
-  }
-
+  // Enter WebxR mode when the button is clicked.
   enterVrElement.addEventListener('click', function() {
     if (!navigator.xr) return;
     navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'] }).then(onSessionStarted);
